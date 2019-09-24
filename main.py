@@ -72,7 +72,7 @@ def get_all_cpp_beneath(root):
 
 
 def get_all_directives_in_file(file):
-    with open(file, 'r') as fh:
+    with open(file, 'r', errors='replace') as fh:
         line = fh.readline()
         line_number = 0
         while line:
@@ -146,14 +146,14 @@ if __name__ == "__main__":
             # print(str(indent) + indent*4*' ' + tup[0])
             if tup[0].startswith(('#ifdef', '#if ', '#ifndef')):
                 indent += 1
-                current_list.append(tup[0])
+                current_list.append(tup[0].lstrip('#ifdef ').lstrip('#if ').lstrip('#infdef ').replace('(', ' ').replace(')', ' ').strip())
                 add_to_dict(current_list,test_dict)
                 add_to_dict(current_list,full_dict)
                 add_to_graph(current_list,G2)
                 add_to_graph(current_list, global_graph)
             if tup[0].startswith(('#elif', '#elseif')):
                 current_list.pop()
-                current_list.append(tup[0])
+                current_list.append(tup[0].lstrip('#elif ').lstrip('#elseif ').replace('(', ' ').replace(')', ' ').strip())
                 add_to_dict(current_list, test_dict)
                 add_to_dict(current_list, full_dict)
                 add_to_graph(current_list,G2)
@@ -174,6 +174,8 @@ if __name__ == "__main__":
     G.draw('./fulltest.png')
     A = nx.nx_agraph.to_agraph(global_graph)
     A.graph_attr.update(size="300,30")
-    A.draw('./global_graph.png', prog='dot')
+    A.graph_attr.update(overlap=False)
+    A.graph_attr.update(ratio="compress")
+    A.draw('./global_graph.png', prog='neato')
 
     # TODO: handle else clauses
