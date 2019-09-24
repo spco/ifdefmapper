@@ -2,6 +2,8 @@ import sys
 import os
 import itertools
 import visualisedictionary as vd
+import networkx as nx
+import matplotlib.pyplot as plt
 
 ifdefs = []
 ifndefs = []
@@ -97,13 +99,23 @@ def add_to_dict(full_list,current_dict):
     return current_dict
 
 
+def add_to_graph(full_list, graph):
+    for item in full_list:
+        graph.add_node(item)
+        for item2 in full_list:
+            if item != item2:
+                graph.add_edge(item, item2)
+
+
 if __name__ == "__main__":
     root = sys.argv[1]
     full_dict = dict()
+    global_graph = nx.Graph()
 
     for file in get_all_cpp_beneath(root):
         current_list = []
         test_dict = dict()
+        G2 = nx.Graph()
 
         print('\n'+file)
         get_all_directives_in_file(file)
@@ -137,44 +149,31 @@ if __name__ == "__main__":
                 current_list.append(tup[0])
                 add_to_dict(current_list,test_dict)
                 add_to_dict(current_list,full_dict)
+                add_to_graph(current_list,G2)
+                add_to_graph(current_list, global_graph)
             if tup[0].startswith(('#elif', '#elseif')):
                 current_list.pop()
                 current_list.append(tup[0])
                 add_to_dict(current_list, test_dict)
                 add_to_dict(current_list, full_dict)
+                add_to_graph(current_list,G2)
+                add_to_graph(current_list,global_graph)
+
         print(current_list)
         print(test_dict)
         vd.pprint(test_dict)
         G = vd.KeysGraph(test_dict)
         G.draw(file + 'test.png')
-        for tup in combine((filtered_ifdefs,
-                            filtered_ifndefs,
-                            filtered_endifs,
-                            filtered_elifs,
-                            filtered_elseifs,
-                            filtered_ifs)):
-
-            if tup[0].startswith('#endif'):
-                try:
-                    current_list.pop()
-                except:
-                    print('error in ', tup[0], tup[1], tup[2])
-            # print(str(indent) + indent*4*' ' + tup[0])
-            if tup[0].startswith(('#ifdef', '#if ', '#ifndef')):
-                current_list.append(tup[0])
-                add_to_dict(current_list,test_dict)
-                add_to_dict(current_list,full_dict)
-            if tup[0].startswith(('#elif', '#elseif')):
-                current_list.pop()
-                current_list.append(tup[0])
-                add_to_dict(current_list, test_dict)
-                add_to_dict(current_list, full_dict)
-
+        A = nx.nx_agraph.to_agraph(G2)
+        A.draw(file + '_graph.png', prog='dot')
         assert len(current_list) == 0, AssertionError('current_list is not empty at end of file processing')
+
     vd.pprint(full_dict)
     G = vd.KeysGraph(full_dict)
     G.graph_attr.update(size="100,100")
-    # G.graph_attr.update(ratio="fill")
     G.draw('./fulltest.png')
+    A = nx.nx_agraph.to_agraph(global_graph)
+    A.graph_attr.update(size="300,30")
+    A.draw('./global_graph.png', prog='dot')
 
     # TODO: handle else clauses
