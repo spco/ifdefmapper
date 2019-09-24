@@ -3,7 +3,6 @@ import os
 import itertools
 import visualisedictionary as vd
 import networkx as nx
-import matplotlib.pyplot as plt
 
 ifdefs = []
 ifndefs = []
